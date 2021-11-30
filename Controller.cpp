@@ -1,8 +1,6 @@
 #include "Controller.h"
 #include "Food.h"
 #include <algorithm>
-//adding comment to controller.h
-//random
 
 /**
  * A constructor of the Controller class
