@@ -1,5 +1,6 @@
 #include "Controller.h"
 #include "Food.h"
+#include <algorithm>
 //adding comment to controller.h
 
 /**
@@ -32,7 +33,7 @@ vector<FoodPtr>::iterator Controller::findMinExpFood(const string food_name)
     {
         return (a->getExp() < b->getExp());
     };
-    return min_element(v.begin(), v.end(), comp);
+    return std::min_element(v.begin(), v.end(), comp);
 }
 
 /**
