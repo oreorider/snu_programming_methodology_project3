@@ -1,7 +1,7 @@
 #include "Controller.h"
 #include "Food.h"
 #include <algorithm>
-fuck shit up bro
+//controller comment added
 /**
  * A constructor of the Controller class
  * 
