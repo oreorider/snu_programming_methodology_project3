@@ -184,6 +184,8 @@ void Refrigerator::insertFoodDirectly()
      * ========== TODO: Implement this part ==========
      * ===============================================
      */
+    
+    controller->stackFood(foodName, foodSize, expDate);
 }
 
 /**
@@ -208,7 +210,31 @@ void Refrigerator::insertFoodFromFile()
          * ===============================================
          * ========== TODO: Implement this part ==========
          * ===============================================
-         */
+         **/
+        string line;
+        string foodName;
+        intPair foodSize;
+        int expDate;
+        while (!ff.eof()) {
+            line = "";
+            getline(ff, line);
+            int p = 0;
+            foodName = "";
+            while (!isspace(line[p])) {
+                foodName += line[p];
+                p++;
+            }
+            p++;
+            foodSize.first = int(line[p]);
+            p += 2;
+            foodSize.second = int(line[p]);
+            p += 2;
+            expDate = int(line[p]);
+            p += 2;
+            for (int i = int(line[p]); i >= 0; i--) {
+                controller->stackFood(foodName, foodSize, expDate);
+            }
+        }
     }
     ff.close();
 }
@@ -224,6 +250,10 @@ void Refrigerator::popFood()
      * ======== TODO: Implement this function ========
      * ===============================================
      */
+    string foodName;
+    cout << "Which food do you want to pop? : ";
+    cin >> foodName;
+    controller->popFood(foodName);
 }
 
 
