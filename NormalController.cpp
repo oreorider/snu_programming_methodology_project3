@@ -25,22 +25,31 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
     int avail_space_start_x, avail_space_end_x;
     int shelf_height=0;
     for(auto &each_shelf : shelves){//for each shelf
+        int counter=0;
         for(auto &each_foodptr : each_shelf.vec){//for each foodptr/foodinfridge that is in the shelf
-            avail_space_start_x=each_foodptr->getPos().first+(each_foodptr->getSize().first);
-            avail_space_end_x;
+            if(counter==0){//if first item in shelf
+                avail_space_start_x=0;//starting avail x space starts from 0
+            }
+            else{//if not first item in shelf
+                auto prev_element = *(&each_foodptr+1);
+                avail_space_start_x=prev_element->getPos().first + prev_element->getSize().first;//starting x pos starts
+                //previous element's ending pos
+            }
+            counter+=1;
 
-            auto nextElement=*(&each_foodptr+1);
-            if(&nextElement==&each_shelf.vec.back()){//if last element of vector
+            if(counter==each_shelf.vec.size()-1){//if last element of vector
                 avail_space_end_x=size.first;//set end_x the 'wall' of fridge
             }
             else{
-                avail_space_end_x=nextElement->getPos().first;
+                avail_space_end_x=each_foodptr->getPos().first;
             }
             avail_x=avail_space_start_x-avail_space_end_x;
             if(avail_x>foodSize.first){//enough space in x, assume height of shelf>height of food always
+
                 //insert food into shelf @ avail_space_start_x
-                FoodPtr new_food=new FoodInFridge(food_to_insert, avail_space_end_x, shelf_height);
+                FoodPtr new_food=new FoodInFridge(food_to_insert, avail_space_end_x, shelf_height);//using heap memory
                 each_shelf.vec.push_back(new_food);//food added to shelf
+                
                 if(foodList.find(name)==foodList.end()){//food does not exist in foodlist
                     vector<FoodPtr> v{new_food};
                     foodList.insert(make_pair(name, v));//add the new food to foodlist
