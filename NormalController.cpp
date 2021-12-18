@@ -1,6 +1,7 @@
 #include "NormalController.h"
 #include "Controller.h"
 #include "Food.h"
+#include <algorithm>
 
 
 /**
@@ -52,14 +53,9 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
         }
         shelf_height+=each_shelf.height;
     }
-    if(inserted){
-        return true;
-    }
-    else{
-        return false;
-    }
+    return inserted;
 }
-
+ 
 
 /**
  * Pop a food with shortest expire date from both foodList and shelves.
@@ -71,15 +67,29 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
  */
 bool NormalController::popFood(const string food_name)
 {
-    if(foodList.find(food_name)==foodList.end()){//food not in foodList.
+    auto food_name_iterator=findMinExpFood(food_name);
+    if(food_name_iterator==foodList[food_name].end()){//food not found in shelves
         return false;
     }
+    //if food found, and
     //assuming now the food is inside the foodList
-    auto v = foodList[food_name];
-    /**
-     * ===============================================
-     * ======== TODO: Implement this function ========
-     * ===============================================
-     */
-    return false;
+    //find location of food from food_name_iterator
+
+    auto food_location = (*food_name_iterator)->getPos();
+    //get the food location in shelves
+    int food_x = food_location.first;
+    int food_y = food_location.second;
+
+    //erase the food at the location from shelves
+    for(auto &shelf_element : shelves){
+        for(auto it = shelf_element.vec.begin(); it!=shelf_element.vec.end(); it++){
+            if((*it)->getPos().second==food_y && (*it)->getPos().first==food_x){
+                shelf_element.vec.erase(it);
+            }
+        }
+    }
+    
+    //erase the food from foodList
+    foodList[food_name].erase(food_name_iterator);
+    return true;
 }
