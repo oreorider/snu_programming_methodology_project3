@@ -1,6 +1,7 @@
 #include "SmartController.h"
 #include "Controller.h"
 #include "Food.h"
+#include <algorithm>
 
 /**
  * Get maximum height among the foods in this shelf
