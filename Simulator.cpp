@@ -3,6 +3,7 @@
 #include "Refrigerator.h"
 #include "SmartRefrigerator.h"
 #include "Simulator.h"
+#include <algorithm>
 
 using namespace std;
 
