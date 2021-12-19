@@ -15,7 +15,7 @@ public:
             shelves.push_back(Shelf(maxHeight));
         }
     }
-
+    void sort_shelves();
     bool stackFood(const string, intPair, int);
     bool popFood(const string);
 

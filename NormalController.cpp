@@ -2,6 +2,27 @@
 #include "Controller.h"
 #include "Food.h"
 #include <algorithm>
+#include <vector>
+
+void NormalController::sort_shelves(){
+    for(auto shelf : shelves){
+        //sort shelf.vec
+        auto vector = shelf.vec;
+        int min;
+        auto min_iter=vector.begin();
+        for(auto it = vector.begin(); it!=vector.end(); it++){
+            min = (*it)->getPos().first;
+            for(auto inner = it+1; inner!=vector.end(); inner++){
+                if((*inner)->getPos().first < min){
+                    min = ((*inner)->getPos().first);
+                    min_iter = inner;
+                }
+            }          
+            iter_swap(it, min_iter);
+            cout<<"swapped"<<endl;
+        }
+    }
+}
 
 /**
  * Store a given food object into the refrigerator. 
@@ -17,6 +38,7 @@
  */
 bool NormalController::stackFood(const string name, intPair foodSize, int exp)
 {
+    sort_shelves();
     Food food_to_insert(name, foodSize, exp);
     bool inserted=false;
     //check if space avail on shelves
@@ -44,6 +66,19 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
         int counter=0;
         for(auto &each_foodptr : each_shelf.vec){//for each foodptr/foodinfridge that is in the shelf
             if(counter==0){//if first item in shelf
+                if(each_foodptr->getPos().first > foodSize.first){//if the food is not 밀착 with the left wall, and food fits
+                    FoodPtr new_food=new FoodInFridge(food_to_insert, 0, shelf_height);//using heap memory
+                    each_shelf.vec.push_back(new_food);//food added to shelf
+                
+                    if(foodList.find(name)==foodList.end()){//food does not exist in foodlist
+                        vector<FoodPtr> v{new_food};
+                        foodList.insert(make_pair(name, v));//add the new food to foodlist
+                    }
+                    else{//food already exsists in foodList
+                        foodList[name].push_back(new_food);//append foodptr to foodlist
+                    }
+                    return true;
+                }
                 avail_space_start_x=each_foodptr->getSize().first;//starting avail x space starts from 0
             }
             else{//if not first item in shelf
@@ -90,6 +125,7 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
  */
 bool NormalController::popFood(const string food_name)
 {
+    sort_shelves();
     auto food_name_iterator=findMinExpFood(food_name);
     if(food_name_iterator==foodList[food_name].end()){//food not found in shelves
         return false;
