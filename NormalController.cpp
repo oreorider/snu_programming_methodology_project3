@@ -3,7 +3,6 @@
 #include "Food.h"
 #include <algorithm>
 
-
 /**
  * Store a given food object into the refrigerator. 
  * 
@@ -21,33 +20,48 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
     Food food_to_insert(name, foodSize, exp);
     bool inserted=false;
     //check if space avail on shelves
-    int avail_x, avail_y;
-    int avail_space_start_x, avail_space_end_x;
+    int avail_x=0, avail_y=0;
+    int avail_space_start_x=0, avail_space_end_x=0;
     int shelf_height=0;
+
+    auto x = shelves;
+
     for(auto &each_shelf : shelves){//for each shelf
+        if(each_shelf.vec.empty()){
+            FoodPtr first_food = new FoodInFridge(food_to_insert, 0, shelf_height);
+            each_shelf.vec.push_back(first_food);//add first food to shelf
+
+            if(foodList.find(name)==foodList.end()){//food does not exist in foodlist
+                    vector<FoodPtr> v{first_food};
+                    foodList.insert(make_pair(name, v));//add the new food to foodlist
+                }
+                else{//food already exsists in foodList
+                    foodList[name].push_back(first_food);//append foodptr to foodlist
+                }
+            return true;
+
+        }
         int counter=0;
         for(auto &each_foodptr : each_shelf.vec){//for each foodptr/foodinfridge that is in the shelf
             if(counter==0){//if first item in shelf
-                avail_space_start_x=0;//starting avail x space starts from 0
+                avail_space_start_x=each_foodptr->getSize().first;//starting avail x space starts from 0
             }
             else{//if not first item in shelf
-                auto prev_element = *(&each_foodptr+1);
-                avail_space_start_x=prev_element->getPos().first + prev_element->getSize().first;//starting x pos starts
-                //previous element's ending pos
+                avail_space_start_x=each_foodptr->getPos().first+each_foodptr->getSize().first;//starting x pos starts
             }
             counter+=1;
 
-            if(counter==each_shelf.vec.size()-1){//if last element of vector
+            if(counter==each_shelf.vec.size()){//if last element of vector
                 avail_space_end_x=size.first;//set end_x the 'wall' of fridge
             }
             else{
-                avail_space_end_x=each_foodptr->getPos().first;
+                avail_space_end_x=(*(&each_foodptr+1))->getPos().first;
             }
-            avail_x=avail_space_start_x-avail_space_end_x;
-            if(avail_x>foodSize.first){//enough space in x, assume height of shelf>height of food always
+            avail_x=avail_space_end_x-avail_space_start_x;
+            if(avail_x>=foodSize.first){//enough space in x, assume height of shelf>height of food always
 
                 //insert food into shelf @ avail_space_start_x
-                FoodPtr new_food=new FoodInFridge(food_to_insert, avail_space_end_x, shelf_height);//using heap memory
+                FoodPtr new_food=new FoodInFridge(food_to_insert, avail_space_start_x, shelf_height);//using heap memory
                 each_shelf.vec.push_back(new_food);//food added to shelf
                 
                 if(foodList.find(name)==foodList.end()){//food does not exist in foodlist
@@ -57,7 +71,7 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
                 else{//food already exsists in foodList
                     foodList[name].push_back(new_food);//append foodptr to foodlist
                 }
-                inserted=true;
+                return true;
             }
         }
         shelf_height+=each_shelf.height;

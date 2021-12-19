@@ -13,6 +13,7 @@
  */
 Controller::Controller(intPair size_, foodListType &foodList_) : size(size_), foodList(foodList_)
 {
+    //cout<<"controller created"<<endl;
     storageGrid = new bool *[size.second];
     for (int i = 0; i < size.second; i++)
         storageGrid[i] = new bool[size.first]{0};

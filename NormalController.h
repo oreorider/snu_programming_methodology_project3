@@ -9,7 +9,12 @@ typedef map<string, vector<FoodPtr>> foodListType;
 class NormalController : public Controller
 {
 public:
-    NormalController(intPair &size_, foodListType &foodList_) : Controller(size_, foodList_) {}
+    NormalController(intPair &size_, foodListType &foodList_) : Controller(size_, foodList_) {
+        int numberShelves = size.second / maxHeight;
+        for(int i=0; i<numberShelves; i++){
+            shelves.push_back(Shelf(maxHeight));
+        }
+    }
 
     bool stackFood(const string, intPair, int);
     bool popFood(const string);
