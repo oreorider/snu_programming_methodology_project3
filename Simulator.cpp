@@ -4,6 +4,7 @@
 #include "SmartRefrigerator.h"
 #include "Simulator.h"
 #include <algorithm>
+#include <limits>
 
 using namespace std;
 

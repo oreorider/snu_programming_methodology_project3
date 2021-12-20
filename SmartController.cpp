@@ -36,11 +36,90 @@ int SmartController::maxHeight(Shelf &shelf)
  */
 bool SmartController::stackFood(const string name, intPair foodSize, int exp)
 {   
-     /**
-     * ===============================================
-     * ======== TODO: Implement this function ========
-     * ===============================================
-     */
+    if(foodSize.first > size.first || foodSize.second > size.second){//if item is bigger than shelf size or fridge height
+        return false;
+    }
+    Food food_to_insert(name, foodSize, exp);
+
+    if(shelves.empty()){//if no shelves at all
+        shelves.push_back(Shelf(foodSize.second));//create first shelf with height of object being added
+        FoodPtr first_food = new FoodInFridge(food_to_insert, 0, 0);//create foodptr in heap
+        shelves[0].vec.push_back(first_food);//add to shelf
+        vector<FoodPtr> v{first_food};
+        foodList.insert(make_pair(name, v));//add to foodList
+        return true;
+    }
+
+    int shelf_level_counter=0;
+    int totalHeight=0;
+    for(auto &shelf : shelves){
+
+        //if food taller than shelf AND top most shelf
+        if(foodSize.second > shelf.height && shelf_level_counter == shelves.size() -1){
+            shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
+            FoodPtr newFood = new FoodInFridge(food_to_insert, 0, totalHeight);
+            if(foodList.find(name) == foodList.end()){//add to foodList
+                vector<FoodPtr> v{newFood};
+            }
+            else{
+                foodList[name].push_back(newFood);
+            }
+            return true;
+        }
+
+
+        //if food is smaller than shelf, same as normalcontroller
+        int avail_x=0, avail_y=0;
+        int avail_space_start_x=0, avail_space_end_x=0;
+        int counter=0;
+        for(auto &each_foodptr : shelf.vec){//for each foodptr/foodinfridge that is in the shelf
+            if(counter==0){//if first item in shelf
+                avail_space_start_x=each_foodptr->getSize().first;//starting avail x space starts from end of first item
+            }
+            else{//if not first item in shelf
+                avail_space_start_x=each_foodptr->getPos().first+each_foodptr->getSize().first;//starting x pos starts
+            }
+
+            counter+=1;
+            if(counter==shelf.vec.size()){//if last element of vector
+                avail_space_end_x=size.first;//set end_x the 'wall' of fridge
+            }
+            else{
+                avail_space_end_x=(*(&each_foodptr+1))->getPos().first;
+            }
+            avail_x=avail_space_end_x-avail_space_start_x;
+            if(avail_x>=foodSize.first){//enough space in x, assume height of shelf>height of food always
+
+                //insert food into shelf @ avail_space_start_x
+                FoodPtr new_food=new FoodInFridge(food_to_insert, avail_space_start_x, totalHeight);//using heap memory
+                shelf.vec.push_back(new_food);//food added to shelf
+                
+                if(foodList.find(name)==foodList.end()){//food does not exist in foodlist
+                    vector<FoodPtr> v{new_food};
+                    foodList.insert(make_pair(name, v));//add the new food to foodlist
+                }
+                else{//food already exsists in foodList
+                    foodList[name].push_back(new_food);//append foodptr to foodlist
+                }
+                return true;
+            }
+        }
+        shelf_level_counter+=1;
+        totalHeight+=shelf.height;
+    }
+
+    if(foodSize.second + totalHeight < size.second){//if still space avail for the food to be inserted
+        shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
+        FoodPtr newFood = new FoodInFridge(food_to_insert, 0, totalHeight);
+        if(foodList.find(name) == foodList.end()){//add to foodList
+            vector<FoodPtr> v{newFood};
+        }
+        else{
+            foodList[name].push_back(newFood);
+        }
+        return true;
+    }
+
     return false;
 }
 
