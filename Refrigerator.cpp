@@ -210,28 +210,15 @@ void Refrigerator::insertFoodFromFile()
          * ===============================================
          * ========== TODO: Implement this part ==========
          * ===============================================
-         **/
-        string line;
+         */
         string foodName;
         intPair foodSize;
+        int number;
         int expDate;
-        while (!ff.eof()) {
-            line = "";
-            getline(ff, line);
-            int p = 0;
-            foodName = "";
-            while (!isspace(line[p])) {
-                foodName += line[p];
-                p++;
-            }
-            p++;
-            foodSize.first = int(line[p]);
-            p += 2;
-            foodSize.second = int(line[p]);
-            p += 2;
-            expDate = int(line[p]);
-            p += 2;
-            for (int i = int(line[p]); i >= 0; i--) {
+
+        while (ff >> foodName) {
+            ff >> foodSize.first >> foodSize.second >> number >> expDate;
+            for(auto i = 0; i < number; i++){
                 controller->stackFood(foodName, foodSize, expDate);
             }
         }
