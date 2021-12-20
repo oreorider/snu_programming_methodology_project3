@@ -84,15 +84,24 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
 
         //if food taller than shelf AND top most shelf
         if(foodSize.second > shelf.height && shelf_level_counter == shelves.size() -1){
+            int inputHeight = shelf.height;
             shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
-            FoodPtr newFood = new FoodInFridge(food_to_insert, 0, totalHeight);
+            FoodPtr newFood = new FoodInFridge(food_to_insert, 0, inputHeight);
+            shelves.back().vec.push_back(newFood);
             if(foodList.find(name) == foodList.end()){//add to foodList
                 vector<FoodPtr> v{newFood};
+                foodList.insert(make_pair(name, v));
             }
             else{
                 foodList[name].push_back(newFood);
             }
             return true;
+        }
+
+        if(foodSize.second > shelf.height){//if food is taller than this shelf
+            totalHeight += shelf.height;
+            shelf_level_counter++;
+            continue;
         }
 
 
