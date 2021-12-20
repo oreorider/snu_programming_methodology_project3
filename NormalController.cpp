@@ -27,6 +27,7 @@ void NormalController::sort_shelves(){
         }
         cout<<endl;
     }
+    
 }
 
 /**
@@ -43,9 +44,6 @@ void NormalController::sort_shelves(){
  */
 bool NormalController::stackFood(const string name, intPair foodSize, int exp)
 {
-    if(foodSize.first > size.first){//if food longer than the shelf return false
-        return false;
-    }
     sort_shelves();
     Food food_to_insert(name, foodSize, exp);
     bool inserted=false;
@@ -157,9 +155,7 @@ bool NormalController::popFood(const string food_name)
             }
         }
     }
-
-
-
+    
     //erase the food from foodList
     
     return false;
