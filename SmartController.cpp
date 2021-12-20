@@ -3,6 +3,33 @@
 #include "Food.h"
 #include <algorithm>
 
+
+void SmartController::sort_shelves(){
+    for(auto& shelf : shelves){
+        //sort shelf.vec
+        auto& vector = shelf.vec;
+        int min=99;
+        auto min_iter=vector.begin();
+        for(auto it = vector.begin(); it!=vector.end(); it++){
+            min = (*it)->getPos().first;
+            min_iter=it;
+            for(auto inner = it+1; inner!=vector.end(); inner++){
+                if((*inner)->getPos().first < min){
+                    min = ((*inner)->getPos().first);
+                    min_iter = inner;
+                }
+            }          
+            iter_swap(it, min_iter);
+            //cout<<"swapped"<<endl;
+        }
+        for(auto i : shelf.vec){
+            cout<<i->getName()<<" ";
+        }
+        cout<<endl;
+    }
+}
+
+
 /**
  * Get maximum height among the foods in this shelf
  * 
@@ -36,6 +63,7 @@ int SmartController::maxHeight(Shelf &shelf)
  */
 bool SmartController::stackFood(const string name, intPair foodSize, int exp)
 {   
+    sort_shelves();
     if(foodSize.first > size.first || foodSize.second > size.second){//if item is bigger than shelf size or fridge height
         return false;
     }
@@ -133,10 +161,57 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
  */
 bool SmartController::popFood(const string food_name) // void
 {
-    /**
-     * ===============================================
-     * ======== TODO: Implement this function ========
-     * ===============================================
-     */
+    auto food_name_iterator=findMinExpFood(food_name);
+    if(food_name_iterator==foodList[food_name].end()){//food not found in shelves
+        return false;
+    }
+    //if food found, and
+    //assuming now the food is inside the foodList
+    //find location of food from food_name_iterator
+
+    auto food_location = (*food_name_iterator)->getPos();
+    //get the food location in shelves
+    int food_x = food_location.first;
+    int food_y = food_location.second;
+
+    //erase the food at the location from shelves
+    for(auto &shelf_element : shelves){
+        for(auto it = shelf_element.vec.begin(); it!=shelf_element.vec.end(); it++){
+            if((*it)->getPos().second==food_y && (*it)->getPos().first==food_x){
+                shelf_element.vec.erase(it);
+                foodList[food_name].erase(food_name_iterator);
+                goto end;
+            }
+        }
+    }
+
+    end://food popped form shelves and foodList
+        //must re - arange objects in shelves.
+
+    //push all objects to the left
+    for(auto &shelf : shelves){
+        int new_x=food_x;
+        for(auto &element : shelf.vec){
+            if(element->getPos().second == food_y && element->getPos().first > food_x){//on the same level and to the right of removed object
+                auto newPosition = make_pair(new_x, element->getPos().second);
+                element->setPos(newPosition);
+                new_x+=element->getSize().first;
+            }
+        }
+    }
+
+    //change height of all objects in shelf
+    int totalHeight = 0;
+    for(auto &shelf : shelves){
+        int newHeight = maxHeight(shelf);
+        shelf.height=newHeight;
+        for(auto &element : shelf.vec){
+            auto newLocation = make_pair(element->getPos().first, totalHeight);
+            element->setPos(newLocation);
+        }
+        totalHeight += shelf.height;
+    }
+
+    
     return false;
 }

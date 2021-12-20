@@ -27,7 +27,6 @@ void NormalController::sort_shelves(){
         }
         cout<<endl;
     }
-    
 }
 
 /**
@@ -158,7 +157,9 @@ bool NormalController::popFood(const string food_name)
             }
         }
     }
-    
+
+
+
     //erase the food from foodList
     
     return false;
