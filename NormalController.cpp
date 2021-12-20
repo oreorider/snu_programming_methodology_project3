@@ -131,7 +131,7 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
  */
 bool NormalController::popFood(const string food_name)
 {
-    sort_shelves();
+    //sort_shelves();
     auto food_name_iterator=findMinExpFood(food_name);
     if(food_name_iterator==foodList[food_name].end()){//food not found in shelves
         return false;
@@ -150,11 +150,13 @@ bool NormalController::popFood(const string food_name)
         for(auto it = shelf_element.vec.begin(); it!=shelf_element.vec.end(); it++){
             if((*it)->getPos().second==food_y && (*it)->getPos().first==food_x){
                 shelf_element.vec.erase(it);
+                foodList[food_name].erase(food_name_iterator);
+                return true;
             }
         }
     }
     
     //erase the food from foodList
-    foodList[food_name].erase(food_name_iterator);
-    return true;
+    
+    return false;
 }
