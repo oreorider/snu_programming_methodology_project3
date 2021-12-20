@@ -5,6 +5,7 @@
 
 
 void SmartController::sort_shelves(){
+    int count=0;
     for(auto& shelf : shelves){
         //sort shelf.vec
         auto& vector = shelf.vec;
@@ -22,9 +23,11 @@ void SmartController::sort_shelves(){
             iter_swap(it, min_iter);
             //cout<<"swapped"<<endl;
         }
+        cout<<"shelf "<<count<<" holds ";
         for(auto i : shelf.vec){
             cout<<i->getName()<<" ";
         }
+        count+=1;
         cout<<endl;
     }
 }
@@ -86,7 +89,7 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
         if(foodSize.second > shelf.height && shelf_level_counter == shelves.size() -1){
             int inputHeight = shelf.height;
             shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
-            FoodPtr newFood = new FoodInFridge(food_to_insert, 0, inputHeight);
+            FoodPtr newFood = new FoodInFridge(food_to_insert, 0, inputHeight+totalHeight);
             shelves.back().vec.push_back(newFood);
             if(foodList.find(name) == foodList.end()){//add to foodList
                 vector<FoodPtr> v{newFood};
@@ -184,18 +187,39 @@ bool SmartController::popFood(const string food_name) // void
     int food_y = food_location.second;
 
     //erase the food at the location from shelves
+    int deleted_shelf_height;
+    bool shelf_empty=false;
+    auto shelf_iter = shelves.begin();
     for(auto &shelf_element : shelves){
         for(auto it = shelf_element.vec.begin(); it!=shelf_element.vec.end(); it++){
             if((*it)->getPos().second==food_y && (*it)->getPos().first==food_x){
-                shelf_element.vec.erase(it);
-                foodList[food_name].erase(food_name_iterator);
+                deleted_shelf_height=shelf_element.height;
+                shelf_element.vec.erase(it);//erase from shelf
+                foodList[food_name].erase(food_name_iterator);//erase from foodList
+                if(shelf_element.vec.empty()){
+                    shelf_empty=true;
+                    shelves.erase(shelf_iter);
+                }
                 goto end;
             }
         }
+        shelf_iter++;
     }
 
     end://food popped form shelves and foodList
         //must re - arange objects in shelves.
+
+    //if shelf deleted, shift foods down
+    if(shelf_empty){
+        for(auto & shelf : shelves){
+            for(auto & element : shelf.vec){
+                if(element->getPos().second > food_y){//if food obj is above the deleted obj
+                    auto newPos = make_pair(element->getPos().first, element->getPos().second-deleted_shelf_height);//shift food down the height of deleted shelf
+                    element->setPos(newPos);
+                }
+            }
+        }
+    }
 
     //push all objects to the left
     for(auto &shelf : shelves){
