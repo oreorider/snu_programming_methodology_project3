@@ -206,11 +206,7 @@ void Refrigerator::insertFoodFromFile()
     }
     else
     {
-        /**
-         * ===============================================
-         * ========== TODO: Implement this part ==========
-         * ===============================================
-         */
+
         string foodName;
         intPair foodSize;
         int number;
@@ -218,7 +214,7 @@ void Refrigerator::insertFoodFromFile()
 
         while (ff >> foodName) {
             ff >> foodSize.first >> foodSize.second >> number >> expDate;
-            for(auto i = 0; i < number; i++){
+            for(int i = 0; i < number; i++){
                 controller->stackFood(foodName, foodSize, expDate);
             }
         }
