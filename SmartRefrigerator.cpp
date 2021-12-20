@@ -4,10 +4,13 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <utility>
+#include <string>
+#include <limits>
 
 #include "Food.h"
 #include "Recipe.h"
-#include <limits>
+
 /**
  * A constructor of the class
  * SmartController should be initialized in this constructor
@@ -34,12 +37,30 @@ void SmartRefrigerator::addRecipeFromFile()
         cout << "There is no recipe file!" << endl;
         return;
     }
-    /**
-     * ===============================================
-     * ======== TODO: Implement this function ========
-     * ===============================================
-     */
 
+    std::string line;
+    std::vector<std::string> recipe;
+    while (std::getline(recipe_list, line))
+    {
+        int pos = 0;
+        std::string token;
+        while ((pos = line.find(' ')) != std::string::npos)
+        {
+            token = line.substr(0, pos);
+            std::cout << token << std::endl;
+            line.erase(0, pos + 1);
+            recipe.push_back(token);
+        }
+
+        // tomatoPasta bacon 1 onion 1 pasta 1 tomato 1 / 7
+        // Recipe(string, vector<strIntPair>, double);
+        std::vector<std::pair<std::string, int>> ingredients;
+        for (int i = 1; i < recipe.size() - 2; i += 2)
+        {
+            ingredients.push_back(std::make_pair(recipe.at(i), std::stoi(recipe.at(i+1))));
+        }
+        this->recipes.push_back({ recipe.at(0), ingredients, std::stoi(recipe.at(recipe.size() - 1)) });
+    }
     recipe_list.close();
 }
 
@@ -78,12 +99,90 @@ void SmartRefrigerator::showRecipe()
  * combination should be normalized by the longest exp (the greatest number)
  * from a possible combination
  */
-void SmartRefrigerator::recommendMealCourses() {
-  /**
-   * ===============================================
-   * ======== TODO: Implement this function ========
-   * ===============================================
-   */
+
+struct greater_equal_key_foods
+{
+    inline bool operator() (const FoodPtr& food1, const FoodPtr& food2)
+    {
+        return (food1->getExp() >= food2->getExp());
+    }
+};
+
+struct greater_equal_key_recipes
+{
+    inline bool operator() (const Recipe& recipe1, const Recipe& recipe2)
+    {
+        return (recipe1.getScore() >= recipe2.getScore());
+    }
+};
+
+void SmartRefrigerator::recommendMealCourses()
+
+{
+    // Preprocessing: Sort all food vectors by expiration score, higher score at start of vector.
+    // nlogn complexity
+    for (auto iter = this->foodList.begin(); iter != this->foodList.end(); ++iter)
+        std::sort(iter->second.begin(), iter->second.end(), greater_equal_key_foods());
+    std::sort(this->recipes.begin(), this->recipes.end(), greater_equal_key_recipes());
+    // Preprocessing Finished.
+
+    
+    // Greedy Algorithm for Meal Course Selection.
+    std::vector<std::string> candidateRecipes;
+    for (int i = 0; i < recipes.size() && candidateRecipes.size() < 4; ++i)
+    {
+        // Can we make this recipe?
+        bool isPossible = true;
+        auto& recipe = recipes.at(i);
+        auto ingredients = recipe.getIngredients();
+
+        std::map<std::string, int> dp;
+
+        for (auto& ingredient : ingredients)
+        {
+            int needed = ingredient.second + dp.at(ingredient.first);
+            auto& foodVector = this->foodList.at(ingredient.first);
+            for (auto& food : foodVector)
+            {
+                needed -= food->getSize().first + food->getSize().second;
+                if (needed <= 0)
+                {
+                    needed = 0;
+                    break;
+                }
+            }
+
+            if (needed > 0)
+            {
+                isPossible = false;
+                break;
+            }
+        }
+
+        if (isPossible) // We have enough ingredients for this recipe
+        {
+            // Update DP for future recipe calculations.
+            for (auto& ingredient : ingredients)
+                dp[ingredient.first] += ingredient.second;
+            candidateRecipes.push_back(recipes.at(i).getName());
+        }
+    }
+
+    if (candidateRecipes.size() < 3)
+    {
+        // Not enough ingredients for any course.
+        std::cout << "Not enough foods for any course." << std::endl;
+    }
+    else if (candidateRecipes.size() == 3)
+    {
+        // Enough ingredients for only one course.
+        
+    }
+    else
+    {
+        // Enough ingredients for three courses.
+        
+    }
 }
 
 /**
