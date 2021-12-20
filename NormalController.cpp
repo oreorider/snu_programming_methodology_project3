@@ -5,13 +5,14 @@
 #include <vector>
 
 void NormalController::sort_shelves(){
-    for(auto shelf : shelves){
+    for(auto& shelf : shelves){
         //sort shelf.vec
-        auto vector = shelf.vec;
-        int min;
+        auto& vector = shelf.vec;
+        int min=99;
         auto min_iter=vector.begin();
         for(auto it = vector.begin(); it!=vector.end(); it++){
             min = (*it)->getPos().first;
+            min_iter=it;
             for(auto inner = it+1; inner!=vector.end(); inner++){
                 if((*inner)->getPos().first < min){
                     min = ((*inner)->getPos().first);
@@ -19,9 +20,14 @@ void NormalController::sort_shelves(){
                 }
             }          
             iter_swap(it, min_iter);
-            cout<<"swapped"<<endl;
+            //cout<<"swapped"<<endl;
         }
+        for(auto i : shelf.vec){
+            cout<<i->getName()<<" ";
+        }
+        cout<<endl;
     }
+    
 }
 
 /**
@@ -46,9 +52,9 @@ bool NormalController::stackFood(const string name, intPair foodSize, int exp)
     int avail_space_start_x=0, avail_space_end_x=0;
     int shelf_height=0;
 
-    auto x = shelves;
 
     for(auto &each_shelf : shelves){//for each shelf
+        avail_x=0; avail_y=0; avail_space_start_x=0; avail_space_end_x=0;
         if(each_shelf.vec.empty()){
             FoodPtr first_food = new FoodInFridge(food_to_insert, 0, shelf_height);
             each_shelf.vec.push_back(first_food);//add first food to shelf
