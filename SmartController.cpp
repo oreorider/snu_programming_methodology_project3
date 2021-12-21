@@ -151,6 +151,7 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
     if(foodSize.second + totalHeight < size.second){//if still space avail for the food to be inserted
         shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
         FoodPtr newFood = new FoodInFridge(food_to_insert, 0, totalHeight);
+        shelves.back().vec.push_back(newFood);
         if(foodList.find(name) == foodList.end()){//add to foodList
             vector<FoodPtr> v{newFood};
         }
