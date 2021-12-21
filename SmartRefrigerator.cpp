@@ -101,6 +101,10 @@ void SmartRefrigerator::showRecipe()
  * from a possible combination
  */
 
+bool sortbysec(const pair<Recipe, double> &a, const pair<Recipe,double> &b){
+    return (a.second > b.second);
+}
+
 struct greater_equal_key_foods
 {
     inline bool operator() (const FoodPtr& food1, const FoodPtr& food2)
@@ -146,7 +150,7 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s){
     return expiration_score;
 }
 
-int SmartRefrigerator::calculateExpirationScore(Recipe & s, map<string, int>& used_ingredients){
+int SmartRefrigerator::calculateExpirationScore(Recipe & s , map<string, int>& used_ingredients){
     int expiration_score;
     for(auto & ingredient : s.getIngredients()){
         if(foodList.find(ingredient.first)==foodList.end()){//ingredient not in foodlist
@@ -160,7 +164,7 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s, map<string, int>& us
         else{//if some ingredients used
             avail_ingred = foodList[ingredient.first].size() - used_ingredients[ingredient.first];
         }
-        if(avail_ingred <= 0){//not enough ingrident in fridge
+        if(avail_ingred < ingredient.second){//not enough ingrident in fridge
             return -999;
         }
         else{//if enough ingriedents in foodList
@@ -179,6 +183,37 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s, map<string, int>& us
     return expiration_score;
 }
 
+bool SmartRefrigerator::possibleDish(Recipe & s, map<string, int>& used_ingredients){
+    //used_ingredients not updated unless dish is possible
+
+    for(auto & ingredient : s.getIngredients()){
+        if(foodList.find(ingredient.first)==foodList.end()){//ingredient not in foodlist
+            return false;
+        }
+        int avail_ingred;
+        if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if no ingredients used so far
+            avail_ingred = foodList[ingredient.first].size();
+            
+        }
+        else{//if some ingredients used
+            avail_ingred = foodList[ingredient.first].size() - used_ingredients[ingredient.first];
+        }
+        if(avail_ingred < ingredient.second){//avail ingredient less than needed
+            return false;//impossible dish
+        }
+        if(avail_ingred > ingredient.second){//more avail ingredient than needed
+            if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if first time ing being used
+                used_ingredients.insert(make_pair(ingredient.first, ingredient.second));//update used
+            }
+            else{//if ing has been used in the past
+                used_ingredients[ingredient.first]=avail_ingred-ingredient.second;//update used
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 void SmartRefrigerator::recommendMealCourses()
 
 {
@@ -189,6 +224,8 @@ void SmartRefrigerator::recommendMealCourses()
     std::sort(this->recipes.begin(), this->recipes.end(), greater_equal_key_recipes());//vector of recipies sorted by satisfaction score
     //std::sort()//vector of recipes sorted by expiration score
     // Preprocessing Finished.
+
+    //calcualte expiration score of each recipe
     vector<int> expiration_scores;
     map <string, int> used_ingredients;
     for(auto &recipe : recipes){
@@ -201,16 +238,16 @@ void SmartRefrigerator::recommendMealCourses()
     cout<<endl;*/
 
     //find normalized satisfaction
-    map<Recipe, double> normalized_satisfaction;
+    vector<pair<Recipe, double>> normalized_satisfaction;
     double max_satisfaction = 0;
     for(auto & recipe : recipes){
         if(recipe.getScore() > max_satisfaction){
             max_satisfaction = recipe.getScore();
         }
     }
-    for(auto & recipe : recipes){
-        auto newelemnet = make_pair(recipe, recipe.getScore()/max_satisfaction);
-        normalized_satisfaction.insert(newelemnet);
+    
+    for(auto recipe : recipes){
+        normalized_satisfaction.push_back(make_pair(recipe, recipe.getScore()/max_satisfaction));
     }
     for(auto element : normalized_satisfaction){
         cout<<element.first.getName()<<" has normalized satisfaction score of "<<element.second<<endl;
@@ -218,7 +255,7 @@ void SmartRefrigerator::recommendMealCourses()
     cout<<endl;
 
     //find normalized expire score
-    map<Recipe, double> normalized_expire;
+    vector<pair<Recipe, double>> normalized_expire;
     double max_expiration = 0;
     for(auto exp_score : expiration_scores){
         if(exp_score > max_expiration){
@@ -227,9 +264,8 @@ void SmartRefrigerator::recommendMealCourses()
     }
     int exp_score_counter=0;
     for(auto & recipe : recipes){
-        auto newelement = make_pair(recipe, expiration_scores[exp_score_counter]/max_expiration);
+        normalized_expire.push_back(make_pair(recipe, expiration_scores[exp_score_counter]/max_expiration));
         exp_score_counter++;
-        normalized_expire.insert(newelement);
     }
     for(auto element : normalized_expire){
         cout<<element.first.getName()<<" has normalized expire score of "<<element.second<<endl;
@@ -237,15 +273,24 @@ void SmartRefrigerator::recommendMealCourses()
     cout<<endl;
 
     //weigh 1/2 each, find total
-    map<Recipe, double> weighted_score;
+    vector<pair<Recipe, double>> weighted_score;
     for(int i=0; i<normalized_expire.size(); i++){
-        auto newelement = make_pair(recipes[i], normalized_expire[recipes[i]]*0.5 + normalized_satisfaction[recipes[i]]*0.5);
-        weighted_score.insert(newelement);
+        auto newelement = make_pair(recipes[i], normalized_expire[i].second*0.5 + normalized_satisfaction[i].second*0.5);
+        weighted_score.push_back(newelement);
     }
     for(auto element : weighted_score){
         cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
     }
     cout<<endl;
+
+    sort(weighted_score.begin(), weighted_score.end(), sortbysec);
+    cout<<"weighted score sorted in descending order"<<endl;
+    for(auto element : weighted_score){
+        cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
+    }
+
+    
+    
 }
 
 /**

@@ -7,12 +7,13 @@
 #include "Refrigerator.h"
 #include "SmartController.h"
 
+
 typedef vector<Recipe> recipeVec;
 
 class SmartRefrigerator : public Refrigerator {
 public:
     SmartRefrigerator();
-    
+    bool possibleDish(Recipe & r, map<string, int> & m);
     int calculateExpirationScore(Recipe & s);
     int calculateExpirationScore(Recipe & s, map<string, int> &m);
     void addRecipeFromFile();
