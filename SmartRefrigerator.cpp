@@ -38,9 +38,9 @@ void SmartRefrigerator::addRecipeFromFile()
         return;
     }
 
-    std::string line;
-    std::vector<std::string> recipe;
-    while (std::getline(recipe_list, line))
+    string line;
+    vector<string> recipe;
+    while (getline(recipe_list, line))
     {
         int pos = 0;
         std::string token;
@@ -59,7 +59,8 @@ void SmartRefrigerator::addRecipeFromFile()
         {
             ingredients.push_back(std::make_pair(recipe.at(i), std::stoi(recipe.at(i+1))));
         }
-        this->recipes.push_back({ recipe.at(0), ingredients, std::stoi(recipe.at(recipe.size() - 1)) });
+        this->recipes.push_back(Recipe(recipe.at(0), ingredients, stoi(line)));
+        recipe.clear();
     }
     recipe_list.close();
 }
@@ -116,72 +117,73 @@ struct greater_equal_key_recipes
     }
 };
 
+int SmartRefrigerator::calculateExpirationScore(Recipe & s){
+    int expiration_score;
+    for(auto & ingredient : s.getIngredients()){
+        if(foodList.find(ingredient.first)==foodList.end()){
+            return -999;
+        }
+        int avail_ingred = foodList[ingredient.first].size()-ingredient.second;
+        if(avail_ingred <= 0){
+            return -999;
+        }
+        if(avail_ingred > 0){
+            auto vec = foodList[ingredient.first];
+            for(int i=0; i<vec.size()-ingredient.second; i++){
+                expiration_score+=vec[i]->getExp();//expiration score for that specific ingredient
+            }
+        }
+    }
+    return expiration_score;
+}
+
+int SmartRefrigerator::calculateExpirationScore(Recipe & s, map<string, int>& used_ingredients){
+    int expiration_score;
+    for(auto & ingredient : s.getIngredients()){
+        if(foodList.find(ingredient.first)==foodList.end()){//ingredient not in foodlist
+            return -999;
+        }
+        int avail_ingred;
+        if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if no ingredients used so far
+            avail_ingred = foodList[ingredient.first].size();
+            
+        }
+        else{//if some ingredients used
+            avail_ingred = foodList[ingredient.first].size() - used_ingredients[ingredient.first];
+        }
+        if(avail_ingred <= 0){//not enough ingrident in fridge
+            return -999;
+        }
+        else{//if enough ingriedents in foodList
+            if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if first time ing being used
+                used_ingredients.insert(make_pair(ingredient.first, ingredient.second));
+            }
+            else{//if ing has been used in the past
+                used_ingredients[ingredient.first]=avail_ingred-ingredient.second;
+            }
+            auto vec = foodList[ingredient.first];
+            for(int i=0; i<vec.size() - used_ingredients[ingredient.first]; i++){
+                expiration_score+=vec[i]->getExp();//expiration score for that specific ingredient
+            }
+        }
+    }
+    return expiration_score;
+}
+
 void SmartRefrigerator::recommendMealCourses()
 
 {
     // Preprocessing: Sort all food vectors by expiration score, higher score at start of vector.
     // nlogn complexity
     for (auto iter = this->foodList.begin(); iter != this->foodList.end(); ++iter)
-        std::sort(iter->second.begin(), iter->second.end(), greater_equal_key_foods());
-    std::sort(this->recipes.begin(), this->recipes.end(), greater_equal_key_recipes());
+        std::sort(iter->second.begin(), iter->second.end(), greater_equal_key_foods());//foodList sorted by expr date
+    std::sort(this->recipes.begin(), this->recipes.end(), greater_equal_key_recipes());//vector of recipies sorted by satisfaction score
+    //std::sort()//vector of recipes sorted by expiration score
     // Preprocessing Finished.
-
-    
-    // Greedy Algorithm for Meal Course Selection.
-    std::vector<std::string> candidateRecipes;
-    for (int i = 0; i < recipes.size() && candidateRecipes.size() < 4; ++i)
-    {
-        // Can we make this recipe?
-        bool isPossible = true;
-        auto& recipe = recipes.at(i);
-        auto ingredients = recipe.getIngredients();
-
-        std::map<std::string, int> dp;
-
-        for (auto& ingredient : ingredients)
-        {
-            int needed = ingredient.second + dp.at(ingredient.first);
-            auto& foodVector = this->foodList.at(ingredient.first);
-            for (auto& food : foodVector)
-            {
-                needed -= food->getSize().first + food->getSize().second;
-                if (needed <= 0)
-                {
-                    needed = 0;
-                    break;
-                }
-            }
-
-            if (needed > 0)
-            {
-                isPossible = false;
-                break;
-            }
-        }
-
-        if (isPossible) // We have enough ingredients for this recipe
-        {
-            // Update DP for future recipe calculations.
-            for (auto& ingredient : ingredients)
-                dp[ingredient.first] += ingredient.second;
-            candidateRecipes.push_back(recipes.at(i).getName());
-        }
-    }
-
-    if (candidateRecipes.size() < 3)
-    {
-        // Not enough ingredients for any course.
-        std::cout << "Not enough foods for any course." << std::endl;
-    }
-    else if (candidateRecipes.size() == 3)
-    {
-        // Enough ingredients for only one course.
-        
-    }
-    else
-    {
-        // Enough ingredients for three courses.
-        
+    vector<int> expiration_scores;
+    map <string, int> used_ingredients;
+    for(auto &recipe : recipes){
+        expiration_scores.push_back(calcuateExpirationScore(recipe, used_ingredients));
     }
 }
 

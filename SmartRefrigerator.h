@@ -12,6 +12,7 @@ typedef vector<Recipe> recipeVec;
 class SmartRefrigerator : public Refrigerator {
 public:
     SmartRefrigerator();
+    int calcuateExpirationScore(Recipe & s, map<string, int> &m);
     void addRecipeFromFile();
     void showRecipe();
     void recommendMealCourses();
