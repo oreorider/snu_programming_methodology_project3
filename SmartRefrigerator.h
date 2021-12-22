@@ -13,6 +13,7 @@ typedef vector<Recipe> recipeVec;
 class SmartRefrigerator : public Refrigerator {
 public:
     SmartRefrigerator();
+    void printCourse(tuple<vector<Recipe>, double, double>);
     tuple<vector<Recipe>, double, double> makeCourse(vector<pair<Recipe, double>>);
     bool possibleDish(Recipe & r, map<string, int> & m);
     double calculateExpirationScore(Recipe & s);

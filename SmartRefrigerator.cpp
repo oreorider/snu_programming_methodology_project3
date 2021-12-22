@@ -11,6 +11,7 @@
 
 #include "Food.h"
 #include "Recipe.h"
+using namespace std;
 
 /**
  * A constructor of the class
@@ -160,32 +161,20 @@ double SmartRefrigerator::calculateExpirationScore(map<string, int>& used_ingred
             return -999;
         }
         int avail_ingred;
-        if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if no ingredients used so far
-            avail_ingred = foodList[ingredient.first].size();
-            
-        }
-        else{//if some ingredients used
-            avail_ingred = foodList[ingredient.first].size() - used_ingredients[ingredient.first];
-        }
-        if(avail_ingred < ingredient.second){//not enough ingrident in fridge
+        avail_ingred = foodList[ingredient.first].size() - used_ingredients[ingredient.first];
+        
+        if(avail_ingred < 0){//not enough ingrident in fridge
             return -999;
         }
-        else{//if enough ingriedents in foodList
-            if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if first time ing being used
-                used_ingredients.insert(make_pair(ingredient.first, ingredient.second));
-            }
-            else{//if ing has been used in the past
-                used_ingredients[ingredient.first]=avail_ingred-ingredient.second;
-            }
-            auto vec = foodList[ingredient.first];
-            for(int i=0; i<vec.size() - used_ingredients[ingredient.first]; i++){
-                expiration_score+=vec[i]->getExp();//expiration score for that specific ingredient
-            }
+        auto vec = foodList[ingredient.first];
+        for(int i=0; i<vec.size() - used_ingredients[ingredient.first]; i++){
+            expiration_score+=vec[i]->getExp();//expiration score for that specific ingredient
         }
+
     }
     for(auto & foodlist_element : foodList){//sum score for the foods that were not checked
         for(auto & foodptr_element : foodlist_element.second){
-            if(used_ingredients.find(foodptr_element->getName()) != used_ingredients.end()){//foodptr not part of ingredient list
+            if(used_ingredients.find(foodptr_element->getName()) == used_ingredients.end()){//foodptr not part of ingredient list
                 expiration_score+=foodptr_element->getExp();
             }
         }
@@ -195,7 +184,7 @@ double SmartRefrigerator::calculateExpirationScore(map<string, int>& used_ingred
 
 bool SmartRefrigerator::possibleDish(Recipe & s, map<string, int>& used_ingredients){
     //used_ingredients not updated unless dish is possible
-
+    map<string, int> temp_used;
     for(auto & ingredient : s.getIngredients()){
         if(foodList.find(ingredient.first)==foodList.end()){//ingredient not in foodlist
             return false;
@@ -211,17 +200,28 @@ bool SmartRefrigerator::possibleDish(Recipe & s, map<string, int>& used_ingredie
         if(avail_ingred < ingredient.second){//avail ingredient less than needed
             return false;//impossible dish
         }
-        if(avail_ingred > ingredient.second){//more avail ingredient than needed, update used_ingred
+        if(avail_ingred >= ingredient.second){//more avail ingredient than needed, update temp used
+            temp_used.insert(make_pair(ingredient.first, ingredient.second));
+            /*
             if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if first time ing being used
-                used_ingredients.insert(make_pair(ingredient.first, ingredient.second));//update used
+                temp_used.insert(make_pair(ingredient.first, ingredient.second));//update used
             }
             else{//if ing has been used in the past
-                used_ingredients[ingredient.first]=avail_ingred-ingredient.second;//update used
-            }
-            return true;
+                used_ingredients[ingredient.first]+=ingredient.second;//update used
+            }*/
         }
     }
-    return false;
+    
+    //if the dish is possible, combine temp_used ingredient count with used_ingredient count
+    for(auto & element : temp_used){
+        if(used_ingredients.find(element.first) == used_ingredients.end()){//if ingredient has not been used before
+            used_ingredients.insert(element);
+        }
+        else{
+            used_ingredients[element.first] += element.second;//if ingredient used before
+        }
+    }
+    return true;
 }
 
 tuple<vector<Recipe>, double, double> SmartRefrigerator::makeCourse(vector<pair<Recipe, double>> weighted_score){
@@ -230,18 +230,31 @@ tuple<vector<Recipe>, double, double> SmartRefrigerator::makeCourse(vector<pair<
     vector<Recipe> course;
     map<string, int> used_ingredients;
     for(auto element : weighted_score){
+        if(mealcount == 3){
+            break;
+        }
         if(possibleDish(element.first, used_ingredients)){
             mealcount++;   
+
+
             course.push_back(element.first);
         }
     }
     double expiration_score = calculateExpirationScore(used_ingredients);
     double satisfaction_score = 0;
-    for(auto recipe_double_pair : weighted_score){
-        satisfaction_score+=recipe_double_pair.first.getScore();
+    for(auto recipe : course){
+        satisfaction_score+=recipe.getScore();
     }
     auto returnElement = make_tuple(course, satisfaction_score, expiration_score);
     return returnElement;
+}
+
+void SmartRefrigerator::printCourse(tuple<vector<Recipe>, double, double> course){
+    for(int i=0; i<get<0>(course).size(); i++){
+        cout<<i+1<<". "<<get<0>(course)[i].getName()<<" ";
+    }
+    cout<<" / total score sum : "<<get<1>(course) + get<2>(course)<<" ("<<get<1>(course)<<" / "<<get<2>(course)<<")"<<endl;
+    //cout<<"1. "<<get<0>(course)[0].getName()<<" 2. "<<get<0>(course)[1].getName()<<" 3. "<<get<0>(course)[2].
 }
 
 void SmartRefrigerator::recommendMealCourses()
@@ -279,10 +292,11 @@ void SmartRefrigerator::recommendMealCourses()
     for(auto recipe : recipes){
         normalized_satisfaction.push_back(make_pair(recipe, recipe.getScore()/max_satisfaction));
     }
+    /*
     for(auto element : normalized_satisfaction){
         cout<<element.first.getName()<<" has normalized satisfaction score of "<<element.second<<endl;
     }
-    cout<<endl;
+    cout<<endl;*/
 
     //find normalized expire score
     vector<pair<Recipe, double>> normalized_expire;
@@ -297,10 +311,11 @@ void SmartRefrigerator::recommendMealCourses()
         normalized_expire.push_back(make_pair(recipe, expiration_scores[exp_score_counter]/max_expiration));
         exp_score_counter++;
     }
+    /*
     for(auto element : normalized_expire){
         cout<<element.first.getName()<<" has normalized expire score of "<<element.second<<endl;
     }
-    cout<<endl;
+    cout<<endl;*/
 
     //weigh 1/2 each, find total
     vector<pair<Recipe, double>> weighted_score;
@@ -308,19 +323,21 @@ void SmartRefrigerator::recommendMealCourses()
         auto newelement = make_pair(recipes[i], normalized_expire[i].second*0.5 + normalized_satisfaction[i].second*0.5);
         weighted_score.push_back(newelement);
     }
+    /*
     for(auto element : weighted_score){
         cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
     }
-    cout<<endl;
+    cout<<endl;*/
 
     sort(weighted_score.begin(), weighted_score.end(), sortbysec);
-    cout<<"weighted score sorted in descending order"<<endl;
+    
+    //cout<<"weighted score sorted in descending order"<<endl;
     int non_negative_score_count;
     for(auto element : weighted_score){
-        if(element.second < 0){
+        if(element.second > 0){
             non_negative_score_count++;
         }
-        cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
+        //cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
     }
     if(non_negative_score_count < 3){//not even enough food to make 3 seperate meals, yet alone 1 course
         cout<<"not enough food to make 1 course"<<endl;
@@ -384,7 +401,9 @@ void SmartRefrigerator::recommendMealCourses()
         get<2>(course2) = get<2>(course2) / maximum_satisfacion;
     } 
 
-    
+    printCourse(course1);
+    printCourse(course2);
+    printCourse(course3);
     
 }
 
