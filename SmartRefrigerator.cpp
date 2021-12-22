@@ -7,6 +7,7 @@
 #include <utility>
 #include <string>
 #include <limits>
+#include <tuple>
 
 #include "Food.h"
 #include "Recipe.h"
@@ -121,8 +122,9 @@ struct greater_equal_key_recipes
     }
 };
 
-int SmartRefrigerator::calculateExpirationScore(Recipe & s){
-    int expiration_score=0;
+//expiration score of one recipe
+double SmartRefrigerator::calculateExpirationScore(Recipe & s){
+    double expiration_score=0;
     vector<string> ingredient_names;
     for(auto & ingredient : s.getIngredients()){
         ingredient_names.push_back(ingredient.first);
@@ -140,7 +142,7 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s){
             }
         }
     }
-    for(auto & foodlist_element : foodList){
+    for(auto & foodlist_element : foodList){//sum score for the foods that were not checked
         for(auto & foodptr_element : foodlist_element.second){
             if(find(ingredient_names.begin(), ingredient_names.end(), foodptr_element->getName()) == ingredient_names.end()){//foodptr not part of ingredient list
                 expiration_score+=foodptr_element->getExp();
@@ -150,9 +152,10 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s){
     return expiration_score;
 }
 
-int SmartRefrigerator::calculateExpirationScore(Recipe & s , map<string, int>& used_ingredients){
-    int expiration_score;
-    for(auto & ingredient : s.getIngredients()){
+//expiration score of foods remaining after used_ingredients pulls them out
+double SmartRefrigerator::calculateExpirationScore(map<string, int>& used_ingredients){
+    double expiration_score;
+    for(auto & ingredient : used_ingredients){ 
         if(foodList.find(ingredient.first)==foodList.end()){//ingredient not in foodlist
             return -999;
         }
@@ -180,6 +183,13 @@ int SmartRefrigerator::calculateExpirationScore(Recipe & s , map<string, int>& u
             }
         }
     }
+    for(auto & foodlist_element : foodList){//sum score for the foods that were not checked
+        for(auto & foodptr_element : foodlist_element.second){
+            if(used_ingredients.find(foodptr_element->getName()) != used_ingredients.end()){//foodptr not part of ingredient list
+                expiration_score+=foodptr_element->getExp();
+            }
+        }
+    }
     return expiration_score;
 }
 
@@ -201,7 +211,7 @@ bool SmartRefrigerator::possibleDish(Recipe & s, map<string, int>& used_ingredie
         if(avail_ingred < ingredient.second){//avail ingredient less than needed
             return false;//impossible dish
         }
-        if(avail_ingred > ingredient.second){//more avail ingredient than needed
+        if(avail_ingred > ingredient.second){//more avail ingredient than needed, update used_ingred
             if(used_ingredients.find(ingredient.first)==used_ingredients.end()){//if first time ing being used
                 used_ingredients.insert(make_pair(ingredient.first, ingredient.second));//update used
             }
@@ -212,6 +222,26 @@ bool SmartRefrigerator::possibleDish(Recipe & s, map<string, int>& used_ingredie
         }
     }
     return false;
+}
+
+tuple<vector<Recipe>, double, double> SmartRefrigerator::makeCourse(vector<pair<Recipe, double>> weighted_score){
+    //return tuple of vector<recipe>, double satisfaction score, double expiration score
+    int mealcount=0; 
+    vector<Recipe> course;
+    map<string, int> used_ingredients;
+    for(auto element : weighted_score){
+        if(possibleDish(element.first, used_ingredients)){
+            mealcount++;   
+            course.push_back(element.first);
+        }
+    }
+    double expiration_score = calculateExpirationScore(used_ingredients);
+    double satisfaction_score = 0;
+    for(auto recipe_double_pair : weighted_score){
+        satisfaction_score+=recipe_double_pair.first.getScore();
+    }
+    auto returnElement = make_tuple(course, satisfaction_score, expiration_score);
+    return returnElement;
 }
 
 void SmartRefrigerator::recommendMealCourses()
@@ -285,16 +315,81 @@ void SmartRefrigerator::recommendMealCourses()
 
     sort(weighted_score.begin(), weighted_score.end(), sortbysec);
     cout<<"weighted score sorted in descending order"<<endl;
+    int non_negative_score_count;
     for(auto element : weighted_score){
+        if(element.second < 0){
+            non_negative_score_count++;
+        }
         cout<<element.first.getName()<<" has weighted score of "<<element.second<<endl;
     }
+    if(non_negative_score_count < 3){//not even enough food to make 3 seperate meals, yet alone 1 course
+        cout<<"not enough food to make 1 course"<<endl;
+        return;
+    }
+
+    
+    auto copy(weighted_score);
+    auto course1 = makeCourse(copy);
+
+    copy.erase(copy.begin());
+    auto course2 = makeCourse(copy);
+
+    copy.erase(copy.begin());
+    auto course3 = makeCourse(copy);
+    
+    
+    if((get<0>(course1)).size() < 3 && (get<0>(course2)).size() < 3 && (get<0>(course3)).size() < 3){//no completed courses are found using greedy algorithm
+        cout<<"not enough food to make 1 course"<<endl;
+        return;
+    }
+    
+    double maximum_satisfacion = 0;
+    double maximum_expiration = 0;
+    if(get<1>(course1) > get<1>(course2) && get<1>(course1) > get<1>(course3)){//course 1 satisfaction greatest
+        maximum_satisfacion = get<1>(course1);
+        get<1>(course1) = 1.0;
+        get<1>(course2) = get<1>(course2) / maximum_satisfacion;
+        get<1>(course3) = get<1>(course3) / maximum_satisfacion;
+    }
+    if(get<1>(course2) > get<1>(course1) && get<1>(course2) > get<1>(course3)){//course 2 satisfaction greatest
+        maximum_satisfacion = get<1>(course2);
+        get<1>(course2) = 1.0;
+        get<1>(course1) = get<1>(course1) / maximum_satisfacion;
+        get<1>(course3) = get<1>(course3) / maximum_satisfacion;
+    } 
+    if(get<1>(course3) > get<1>(course1) && get<1>(course3) > get<1>(course2)){//course 3 satisfaction greatest
+        maximum_satisfacion = get<1>(course3);
+        get<1>(course3) = 1.0;
+        get<1>(course1) = get<1>(course1) / maximum_satisfacion;
+        get<1>(course2) = get<1>(course2) / maximum_satisfacion;
+    } 
+    
+
+    if(get<2>(course1) > get<2>(course2) && get<2>(course1) > get<2>(course3)){//course 1 expirationscore greatest
+        maximum_satisfacion = get<2>(course1);
+        get<2>(course1) = 1.0;
+        get<2>(course2) = get<2>(course2) / maximum_satisfacion;
+        get<2>(course3) = get<2>(course3) / maximum_satisfacion;
+    }
+    if(get<2>(course2) > get<2>(course1) && get<2>(course2) > get<2>(course3)){//course 2 expirationscore greatest
+        maximum_satisfacion = get<2>(course2);
+        get<2>(course2) = 1.0;
+        get<2>(course1) = get<2>(course1) / maximum_satisfacion;
+        get<2>(course3) = get<2>(course3) / maximum_satisfacion;
+    } 
+    if(get<2>(course3) > get<2>(course1) && get<2>(course3) > get<2>(course2)){//course 3 expirationscore greatest
+        maximum_satisfacion = get<2>(course3);
+        get<2>(course3) = 1.0;
+        get<2>(course1) = get<2>(course1) / maximum_satisfacion;
+        get<2>(course2) = get<2>(course2) / maximum_satisfacion;
+    } 
 
     
     
 }
 
 /**
- * base function of the smart refrigerator
+ * base function of the smart refrigeratorfdfdd
  * User should type a number between 1 and 4 to call a function of the smart
  * regrigerator Then, this function utilizes the other functions of the smart
  * refrigerator as the user's input Below is the list of options that menuSelect
