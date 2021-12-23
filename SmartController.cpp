@@ -23,12 +23,13 @@ void SmartController::sort_shelves(){
             iter_swap(it, min_iter);
             //cout<<"swapped"<<endl;
         }
+        /*
         cout<<"shelf "<<count<<" holds ";
         for(auto i : shelf.vec){
             cout<<i->getName()<<" ";
-        }
+        }*/
         count+=1;
-        cout<<endl;
+        //cout<<endl;
     }
 }
 

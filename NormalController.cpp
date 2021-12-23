@@ -22,10 +22,11 @@ void NormalController::sort_shelves(){
             iter_swap(it, min_iter);
             //cout<<"swapped"<<endl;
         }
+        /*
         for(auto i : shelf.vec){
             cout<<i->getName()<<" ";
         }
-        cout<<endl;
+        cout<<endl;*/
     }
     
 }

@@ -235,8 +235,6 @@ tuple<vector<Recipe>, double, double> SmartRefrigerator::makeCourse(vector<pair<
         }
         if(possibleDish(element.first, used_ingredients)){
             mealcount++;   
-
-
             course.push_back(element.first);
         }
     }
