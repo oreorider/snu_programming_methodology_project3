@@ -84,9 +84,14 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
     int shelf_level_counter=0;
     int totalHeight=0;
     for(auto &shelf : shelves){
-
+        if(foodSize.second + totalHeight > size.second){//if food height + shelf height is bigger than size of fridge
+            return false;
+        }
         //if food taller than shelf AND top most shelf
         if(foodSize.second > shelf.height && shelf_level_counter == shelves.size() -1){
+            if(foodSize.second + shelf.height + totalHeight > size.second){
+                return false;
+            }
             int inputHeight = shelf.height;
             shelves.push_back(Shelf(foodSize.second));//create new shelf with height of the food
             FoodPtr newFood = new FoodInFridge(food_to_insert, 0, inputHeight+totalHeight);
@@ -154,6 +159,7 @@ bool SmartController::stackFood(const string name, intPair foodSize, int exp)
         shelves.back().vec.push_back(newFood);
         if(foodList.find(name) == foodList.end()){//add to foodList
             vector<FoodPtr> v{newFood};
+            foodList.insert(make_pair(name, v));
         }
         else{
             foodList[name].push_back(newFood);
@@ -197,6 +203,9 @@ bool SmartController::popFood(const string food_name) // void
                 deleted_shelf_height=shelf_element.height;
                 shelf_element.vec.erase(it);//erase from shelf
                 foodList[food_name].erase(food_name_iterator);//erase from foodList
+                if(foodList[food_name].empty()){//erase key from foodList if no instances of the ingredient
+                    foodList.erase(food_name);
+                }
                 if(shelf_element.vec.empty()){
                     shelf_empty=true;
                     shelves.erase(shelf_iter);
