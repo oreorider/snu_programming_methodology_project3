@@ -44,6 +44,9 @@ void NormalController::sort_shelves(){
  */
 bool NormalController::stackFood(const string name, intPair foodSize, int exp)
 {
+    if(foodSize.first > size.first || foodSize.second > maxHeight){
+        return false;
+    }
     sort_shelves();
     Food food_to_insert(name, foodSize, exp);
     bool inserted=false;
@@ -151,6 +154,9 @@ bool NormalController::popFood(const string food_name)
             if((*it)->getPos().second==food_y && (*it)->getPos().first==food_x){
                 shelf_element.vec.erase(it);
                 foodList[food_name].erase(food_name_iterator);
+                if(foodList[food_name].empty()){
+                    foodList.erase(food_name);
+                }
                 return true;
             }
         }
