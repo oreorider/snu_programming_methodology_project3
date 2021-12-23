@@ -206,7 +206,6 @@ void Refrigerator::insertFoodFromFile()
     }
     else
     {
-
         string foodName;
         intPair foodSize;
         int number;
